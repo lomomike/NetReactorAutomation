@@ -1,6 +1,8 @@
 import sys
 import os
 import re
+import subprocess
+from datetime import datetime
 
 reactorPath = '"C:\Program Files (x86)\Eziriz\.NET Reactor\dotNET_Reactor.Console.exe"'
 
@@ -12,7 +14,7 @@ def findexe(files):
     for file in files:
         if(file.endswith('.exe')):
             return file
-    return None;
+    return None
 
 def filter(filename):
     patterns = [
@@ -36,6 +38,11 @@ def formfileslist(path):
             if filter(filename):
                 filetoprocess.append(filename)
     return filetoprocess
+	
+def deletehash(path):
+    for (this, inDirs, files) in os.walk(path):
+        for filename in files:
+            if filename.endswith('.hash') : os.remove(os.path.join(path, filename))
 
 
 def addtargetfile(path, exefile):
@@ -45,10 +52,15 @@ def addtargetfile(path, exefile):
 
 def addsatelites(path, satelites):
     return ""
+    line = '-satellite_assemblies "'
+    for dll in satelites:
+        libpath = os.path.join(path, dll)
+        line += libpath + "/"
+    return line[:-1] + '"'
 
 
 def addaditionalparams():
-    return ""
+    return "-necrobit 1 -stringencryption 1"
 
 def formcommandline(path, exefile, satelites):
     commandline = reactorPath + " " + \
@@ -61,6 +73,7 @@ def formcommandline(path, exefile, satelites):
 
 
 def main(path):
+    print datetime.now()
     filelist = formfileslist(path)
   
     exefile = findexe(filelist)
@@ -68,12 +81,20 @@ def main(path):
         return 1
     else:
         filelist.remove(exefile)
+        filelist.insert(0, exefile)
+    #print filelist
 
-    for filename in filelist:
-        print filename
-    print
+    # command = formcommandline(path, exefile, filelist)
+        # subprocess.call(command)
 
-    print formcommandline(path, exefile, filelist)
+    for file in filelist:
+        command = formcommandline(path, file, filelist)
+        #print command
+        subprocess.call(command)
+
+    deletehash(path)
+    print datetime.now()
+    
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
